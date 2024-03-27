@@ -23,7 +23,7 @@
 #define BLYNK_TEMPLATE_ID "TMPL6PyORnvfe" // Template ID
 #define BLYNK_TEMPLATE_NAME "Home Fan Controller" // Device Name
 //#define BLYNK_AUTH_TOKEN "" // Authentication number
-#define BLYNK_FIRMWARE_VERSION "0.1.1"
+#define BLYNK_FIRMWARE_VERSION "0.1.3"
 
 #define LOCAL_WIFI_SSID "" //"Wifi SSID"
 #define LOCAL_WIFI_PASS "" //"Wifi Pass"
@@ -116,7 +116,7 @@ class StepperMotor {
 
  private:
   void _step(uint16_t step_idx);
-  void _set_speed(uint8_t speed) { _blk_speed = speed; }
+  void _set_speed(uint16_t speed) { _blk_speed = speed; }
   void _set_max_angle(uint16_t max_angle) { _blk_max_angle = max_angle; }
   void _set_current_angle(int16_t angle) { _blk_current_angle = angle; }
   void _reset_angle();
@@ -125,7 +125,7 @@ class StepperMotor {
   void _unset_timer(bool update_blynk=false);
 
   uint8_t _blk_switch_on;
-  uint8_t _blk_speed;
+  uint16_t _blk_speed;
   uint16_t _blk_max_angle;      // Measured in number of steps
   int16_t _blk_current_angle;  // Measured in number of steps
 
@@ -456,7 +456,7 @@ class FanController {
 
   // Stream data
   int _blk_switch_on;
-  int _blk_speed;
+  uint8_t _blk_speed;
   int _blk_timer_on;
   int _blk_timer_time;
 
@@ -590,7 +590,8 @@ void FanController::speed_handler(BlynkParam const *param) {
   }
 
   _blk_speed = value;
-  this->_set_speed();
+  if (_blk_switch_on == 1)
+    this->_set_speed();
 }
 
 
@@ -742,9 +743,6 @@ void setup() {
 
 //  Blynk.begin(BLYNK_AUTH_TOKEN, LOCAL_WIFI_SSID, LOCAL_WIFI_PASS);
   BlynkEdgent.begin();
-
-  fan_controller.init();
-  stepper_motor.init();
 }
 
 void loop() {
@@ -755,6 +753,9 @@ void loop() {
 
   if (BlynkState::get() == MODE_RUNNING) {
     if (!devices_inited) {
+      fan_controller.init();
+      stepper_motor.init();
+
       Serial.println("Initing the values when after resetting the device...");
       init_values();
       devices_inited = true;
